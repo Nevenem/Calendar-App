@@ -2,6 +2,10 @@ package com.calendar_app.servlets;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
 
 import javax.security.auth.login.LoginException;
@@ -50,14 +54,20 @@ public class DisplayEventsServlet extends HttpServlet {
 			user = UserManager.getInstance().getLoggedInUser(sessionToken);
 			List<Event> events = eventDao.readAllEvents(user);
 
+
+			String pattern = "MM-dd-yyyy";
+			SimpleDateFormat simpleDateFormat = new SimpleDateFormat(pattern);
+			
 			writer.write("<table>");
 			for (Event event : events) {
+						
+				String date = simpleDateFormat.format(event.getDate());
 				writer.write("<tr>");
-				writer.write("<td>" + event.getDate().toString() + "</td>");
+				writer.write("<td>" + date + "</td>");
 				writer.write("<td>" + event.getTitle() + "</td>");
 				writer.write("<td>" + event.getDescription() + "</td>");
-				writer.write("<td> <a href=\"deleteEvent.jsp?eventId=" + event.getId() + "\">delete</a></td>");
-				writer.write("<td> <a href=\"modifyEvent.jsp?eventId=" + event.getId() + "\">modify</a></td>");
+				writer.write("<td class=\"small_button\"> <a href=\"deleteEvent.jsp?eventId=" + event.getId() + "\">delete</a></td>");
+				writer.write("<td class=\"small_button\"> <a href=\"modifyEvent.jsp?eventId=" + event.getId() + "\">modify</a></td>");
 				writer.write("</tr>");
 			}
 			writer.write("</table>");
