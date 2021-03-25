@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.List;
 
+import javax.security.auth.login.LoginException;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
@@ -16,9 +17,11 @@ import com.calendar_app.beans.User;
 import com.calendar_app.dao.DBConnection;
 import com.calendar_app.dao.EventDao;
 import com.calendar_app.dao.UserDao;
+import com.calendar_app.services.UserManager;
 
 //ChangePasswordtServlet.java
-@WebServlet(name = "ChangePasswordServlet", description = "ChangePassword Servlet", urlPatterns = { "/ChangePasswordServlet" })
+@WebServlet(name = "ChangePasswordServlet", description = "ChangePassword Servlet", urlPatterns = {
+		"/ChangePasswordServlet" })
 public class ChangePasswordServlet extends HttpServlet {
 	private static final long serialVersionUID = 1L;
 	private UserDao userDao;
@@ -37,40 +40,36 @@ public class ChangePasswordServlet extends HttpServlet {
 
 		PrintWriter writer = res.getWriter();
 
-		HttpSession session = req.getSession(false);
+		HttpSession session = req.getSession(true);
 
-		if (session == null) {
-			writer.write("You are not logged in - no events");
-		} else {
-			String username = (String) session.getAttribute("name");
-			User user = userDao.readUser(username);
-			writer.write(drawChangePasswordForm(username));
+		try {
+			User user = UserManager.getInstance().getLoggedInUser((String) session.getAttribute("sessionToken"));
+			writer.write(drawChangePasswordForm(user.getUsername()));
+		} catch (LoginException e) {
+			writer.write("You are not logged in!");
 		}
 	}
 
 	private String drawChangePasswordForm(String username) {
-		String form = "<h3>Change password:</h3>" 
-				+ "<form method = \"post\" action=\"ChangePasswordServlet\">\n"
-				+ "<p>Username: " + username + "</p>"
-				+ "<label for=\"password\">Password:</label>" 
-			    + "<input type=\"text\" id=\"password\" name=\"password\">" 
-				+ "<input type=\"submit\" value=\"Submit\">\n"
-				+ "</form>";
+		String form = "<h3>Change password:</h3>" + "<form method = \"post\" action=\"ChangePasswordServlet\">\n"
+				+ "<p>Username: " + username + "</p>" + "<label for=\"password\">Password:</label>"
+				+ "<input type=\"text\" id=\"password\" name=\"password\">"
+				+ "<input type=\"submit\" value=\"Submit\">\n" + "</form>";
 		return form;
 	}
-	
+
 	protected void doPost(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
 		HttpSession session = req.getSession(true);
-
-		String name = (String) session.getAttribute("name");
-		String newPassword = req.getParameter("password");
-		
-		User user = userDao.readUser(name);
-		user.setPassword(newPassword);
-		userDao.updateUser(user);
-		
 		PrintWriter writer = res.getWriter();
-		writer.write("Password changed to " + newPassword);
+
+		try {
+			User user = UserManager.getInstance().getLoggedInUser((String) session.getAttribute("sessionToken"));
+			String newPassword = req.getParameter("password");
+			UserManager.getInstance().changePassword(user, newPassword);
+			res.sendRedirect("/calendar-app/events.jsp");
+		} catch (LoginException e) {
+			writer.write("You are not logged in!");
+		}
 	}
 
 }

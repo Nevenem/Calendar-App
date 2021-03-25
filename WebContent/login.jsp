@@ -9,10 +9,14 @@
 <body>
 <i>
 <%
-    if (request.getParameter("status") == null) {
-        out.println("Welcome, please log in:");
-    } else if (request.getParameter("status").equals("failed"))  {
-        out.println("Invalid login, try again!");
+    if (request.getParameter("status") != null) {
+        if (request.getParameter("status").equals("failed"))  {
+	        out.println("Invalid login, try again!");
+	    } else if (request.getParameter("status").equals("activation_success")) {
+	    	out.println("Account activation successful, please log in.");
+	    } else if (request.getParameter("status").equals("activation_failed")) {
+	    	out.println("Invalid activation code!");
+	    }
     }
 %>
 </i>

@@ -32,6 +32,9 @@ public class DBConnection {
 					+ "  `uuid` char(40) COLLATE utf8_unicode_ci NOT NULL,\n"
 					+ "  `username` char(128) COLLATE utf8_unicode_ci DEFAULT NULL,\n"
 					+ "  `password` char(128) COLLATE utf8_unicode_ci DEFAULT NULL,\n"
+					+ "  `email` char(128) COLLATE utf8_unicode_ci DEFAULT NULL,\n"
+					+ "  `validationCode` char(128) COLLATE utf8_unicode_ci DEFAULT NULL,\n"
+					+ "  `active` TINYINT DEFAULT 0,\n"
 					+ "   PRIMARY KEY (`uuid`)\n" + ") ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;");
 			System.out.println("Table User created");
 			stm.execute(

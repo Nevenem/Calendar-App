@@ -3,6 +3,8 @@ package com.calendar_app.servlets;
 import java.io.IOException;
 import java.io.PrintWriter;
 
+import javax.security.auth.login.FailedLoginException;
+import javax.security.auth.login.LoginException;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
@@ -14,6 +16,8 @@ import com.calendar_app.beans.User;
 import com.calendar_app.dao.DBConnection;
 import com.calendar_app.dao.EventDao;
 import com.calendar_app.dao.UserDao;
+import com.calendar_app.exceptions.LoginFailedException;
+import com.calendar_app.services.UserManager;
 
 //LogintServlet.java
 @WebServlet(name = "LoginServlet", description = "Login Servlet", urlPatterns = { "/LoginServlet" })
@@ -39,18 +43,17 @@ public class LoginServlet extends HttpServlet {
 
 		HttpSession session = req.getSession(true);
 
-		if (session.getAttribute("loggedIn") == null) {
+		String sessionToken = (String) session.getAttribute("sessionToken");
+		User user;
+		try {
+			user = UserManager.getInstance().getLoggedInUser(sessionToken);
+			writer.write("Welcome back " + (String) user.getUsername() + "<br>");
+			writer.write("<a href=\"events.jsp\">Go to events</a>");
+		} catch (LoginException e) {
 			writer.write(drawEmptyForm());
 
-		} else {
-			writer.write("Welcome back " + (String) session.getAttribute("name"));
-			writer.write("<a href=\"events.jsp\">Go to events</a>");
 		}
-	}
-	
-	private boolean isValidAuth(String name, String password) {
-		User user = userDao.readUser(name);
-		return (user != null) && (user.getPassword().equals(password));
+
 	}
 
 	protected void doPost(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
@@ -59,17 +62,15 @@ public class LoginServlet extends HttpServlet {
 
 		String name = req.getParameter("name");
 		String password = req.getParameter("password");
-		
+
 		PrintWriter writer = res.getWriter();
-		
-		if (isValidAuth(name, password)) {
-			session.setAttribute("name", name);
-			session.setAttribute("password", password);
-			session.setAttribute("loggedIn",  "true");
-			writer.write("Welcome " + (String) session.getAttribute("name"));
+
+		try {
+			String sessionToken = UserManager.getInstance().loginUser(name, password);
+			session.setAttribute("sessionToken", sessionToken);
 			res.sendRedirect("/calendar-app/events.jsp");
 
-		} else {
+		} catch (FailedLoginException e) {
 			writer.write("Invalid username or password! Try again!");
 			res.sendRedirect("/calendar-app/login.jsp?status=failed");
 		}
@@ -79,7 +80,8 @@ public class LoginServlet extends HttpServlet {
 		String form = "<form method = \"post\" action=\"LoginServlet\">\r\n" + "<h3>Log in</h3>"
 				+ "<input type=\"text\" placeholder=\"Name\" name=\"name\"><br><br>\r\n"
 				+ "<input type=\"text\" placeholder=\"Password\" name=\"password\"><br><br>\r\n"
-				+ "<input type=\"submit\" value=\"submit\"><br>\r\n" + "</form>";
+				+ "<input type=\"submit\" value=\"submit\"><br>\r\n" + "</form><br>"
+				+ "<a href='/calendar-app/passwordRecovery.jsp'>Forgot your password?</a>";
 		return form;
 	}
 }
